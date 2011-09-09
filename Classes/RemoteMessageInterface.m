@@ -1,5 +1,5 @@
 //
-//  AsyncSocket.m
+//  RemoteMessageInterface.m
 //  
 //  This class is in the public domain.
 //  Originally created by Daniel Drzimotta on Wed May 11 2011
@@ -30,7 +30,6 @@
 - (void)logError:(NSString *)msg;
 - (void)logInfo:(NSString *)msg;
 - (void)logMessage:(NSString *)msg;
--	(NSString*) getIPAddress;
 @end
 
 @implementation RemoteMessageInterface
@@ -192,7 +191,7 @@
 
 
 #pragma mark -
-#pragma mark IP Address Retrievel
+#pragma mark IP Address Retrievel And Port Method
 
 - (NSString *)getIPAddress {
   NSString *address = @"error";
@@ -226,6 +225,10 @@
   freeifaddrs(interfaces);
 	
   return address;
+}
+
+- (NSString*) port {
+    return [NSString stringWithFormat:@"%hu", [listenSocket localPort]];
 }
 
 @end
