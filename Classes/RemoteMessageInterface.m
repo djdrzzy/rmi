@@ -18,8 +18,8 @@
 #define ECHO_MSG     1
 #define WARNING_MSG  2
 
-#define READ_TIMEOUT 15.0
-#define READ_TIMEOUT_EXTENSION 10.0
+#define READ_TIMEOUT 600.0
+#define READ_TIMEOUT_EXTENSION 60.0
 
 #define FORMAT(format, ...) [NSString stringWithFormat:(format), ##__VA_ARGS__]
 
