@@ -23,6 +23,9 @@
 
 #define FORMAT(format, ...) [NSString stringWithFormat:(format), ##__VA_ARGS__]
 
+static NSString * const DEFAULT_WELCOME_MESSAGE = @"Welcome to the RCI Server";
+static NSString * const DEFAULT_PROMPT = @"\n>";
+
 @interface RemoteMessageInterface ()
 @property (nonatomic, readwrite, retain) AsyncSocket *listenSocket;
 @property (nonatomic, readwrite, retain) NSMutableArray *connectedSockets;
@@ -34,20 +37,41 @@
 
 @implementation RemoteMessageInterface
 @synthesize delegate;
+@synthesize welcomeMessage;
+@synthesize prompt;
 @synthesize listenSocket;
 @synthesize connectedSockets;
 @synthesize isRunning;
 
-- (id)init
-{
-	if((self = [super init]))
-	{
-		listenSocket = [[AsyncSocket alloc] initWithDelegate:self];
+
+
+-(id) initWithWelcomeMessage:(NSString*)message andPrompt:(NSString*)newPrompt {
+    self = [super init];
+    
+    if (self) {
+        self.welcomeMessage = message;
+        self.prompt = newPrompt;
+        
+        listenSocket = [[AsyncSocket alloc] initWithDelegate:self];
 		connectedSockets = [[NSMutableArray alloc] initWithCapacity:1];
 		
 		isRunning = NO;
-	}
-	return self;
+    }
+    
+    return self;
+}
+
+- (id)init {
+	return [self initWithWelcomeMessage:DEFAULT_WELCOME_MESSAGE 
+                              andPrompt:DEFAULT_PROMPT];
+}
+
+- (void)dealloc {
+    self.welcomeMessage = nil;
+    self.prompt = nil;
+    self.listenSocket = nil;
+    self.connectedSockets = nil;
+    [super dealloc];
 }
 
 -(void) startOnSocket:(int)port {
@@ -116,7 +140,7 @@
 - (void)onSocket:(AsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)port {
 	[self logInfo:FORMAT(@"Accepted client %@:%hu", host, port)];
 	
-	NSString *welcomeMsg = @"Welcome to the RCI Server\r\n>";
+    NSString *welcomeMsg = [NSString stringWithFormat: @"%@\r\n%@", self.welcomeMessage, self.prompt];
 	NSData *welcomeData = [welcomeMsg dataUsingEncoding:NSUTF8StringEncoding];
 	
 	[sock writeData:welcomeData withTimeout:-1 tag:WELCOME_MSG];
@@ -152,7 +176,7 @@
 		returnString = @"";
 	}
 	
-	returnString = [returnString stringByAppendingString:@"\n>"];
+	returnString = [returnString stringByAppendingString:self.prompt];
 	
 	NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
 	[sock writeData:dataToReturn withTimeout:-1 tag:ECHO_MSG];

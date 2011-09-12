@@ -14,6 +14,9 @@
 
 @interface RemoteMessageInterface : NSObject
 @property (nonatomic, readwrite, assign) id<RemoteMessageInterfaceDelegate> delegate;
+@property (nonatomic, readwrite, copy) NSString *welcomeMessage;
+@property (nonatomic, readwrite, copy) NSString *prompt;
+-(id) initWithWelcomeMessage:(NSString*)message andPrompt:(NSString*)prompt;
 -(void) startOnSocket:(int)port;
 -(void) end;
 
