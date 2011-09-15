@@ -139,7 +139,7 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 
 - (void)onSocket:(AsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)port {
 	[self logInfo:FORMAT(@"Accepted client %@:%hu", host, port)];
-	
+
     NSString *welcomeMsg = [NSString stringWithFormat: @"%@\r\n%@", self.welcomeMessage, self.prompt];
 	NSData *welcomeData = [welcomeMsg dataUsingEncoding:NSUTF8StringEncoding];
 	
