@@ -16,6 +16,8 @@
 @property (nonatomic, readwrite, assign) id<RemoteMessageInterfaceDelegate> delegate;
 @property (nonatomic, readwrite, copy) NSString *welcomeMessage;
 @property (nonatomic, readwrite, copy) NSString *prompt;
+@property (nonatomic, readwrite, assign) BOOL squelchClientLogging;
+@property (nonatomic, readwrite, copy) NSString *branding;
 -(id) initWithWelcomeMessage:(NSString*)message andPrompt:(NSString*)prompt;
 -(void) startOnSocket:(int)port;
 -(void) end;

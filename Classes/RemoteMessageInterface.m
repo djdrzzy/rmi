@@ -23,8 +23,9 @@
 
 #define FORMAT(format, ...) [NSString stringWithFormat:(format), ##__VA_ARGS__]
 
-static NSString * const DEFAULT_WELCOME_MESSAGE = @"Welcome to the RCI Server";
+static NSString * const DEFAULT_WELCOME_MESSAGE = @"Welcome to the Remote Message Interface Server";
 static NSString * const DEFAULT_PROMPT = @"\n>";
+static NSString * const DEFAULT_BRANDING = @"RMI";
 
 @interface RemoteMessageInterface ()
 @property (nonatomic, readwrite, retain) AsyncSocket *listenSocket;
@@ -32,13 +33,16 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 @property (nonatomic, readwrite, assign) BOOL isRunning;
 - (void)logError:(NSString *)msg;
 - (void)logInfo:(NSString *)msg;
-- (void)logMessage:(NSString *)msg;
+- (void)logInputMessage:(NSString *)msg;
+- (void)logOutputMessage:(NSString *)msg;
 @end
 
 @implementation RemoteMessageInterface
 @synthesize delegate;
 @synthesize welcomeMessage;
 @synthesize prompt;
+@synthesize squelchClientLogging;
+@synthesize branding;
 @synthesize listenSocket;
 @synthesize connectedSockets;
 @synthesize isRunning;
@@ -55,6 +59,8 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
         listenSocket = [[AsyncSocket alloc] initWithDelegate:self];
 		connectedSockets = [[NSMutableArray alloc] initWithCapacity:1];
 		
+        self.branding = DEFAULT_BRANDING;
+        
 		isRunning = NO;
     }
     
@@ -69,6 +75,7 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 - (void)dealloc {
     self.welcomeMessage = nil;
     self.prompt = nil;
+    self.branding = nil;
     self.listenSocket = nil;
     self.connectedSockets = nil;
     [super dealloc];
@@ -89,7 +96,8 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 			return;
 		}
 		
-		[self logInfo:FORMAT(@"RCI server started on port %hu, ip %@", 
+		[self logInfo:FORMAT(@"%@ server started on port %hu, ip %@",
+                             self.branding,
 												 [listenSocket localPort],
 												 [self getIPAddress])];
 		
@@ -110,7 +118,7 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 		[[connectedSockets objectAtIndex:i] disconnect];
 	}
 	
-	[self logInfo:@"Stopped RCI server"];
+	[self logInfo:[NSString stringWithFormat:@"Stopped %@ server", self.branding]];
 	
 	isRunning = NO;
 }
@@ -119,15 +127,19 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 #pragma mark Logging
 
 - (void)logError:(NSString *)msg {	
-	NSLog(@"RCI Error: %@\n", msg);
+	NSLog(@"%@ Error:\n%@\n", self.branding, msg);
 }
 
 - (void)logInfo:(NSString *)msg{
-	NSLog(@"RCI Info: %@\n", msg);
+	NSLog(@"%@ Info:\n%@\n", self.branding, msg);
 }
 
-- (void)logMessage:(NSString *)msg {
-	NSLog(@"RCI Message: %@\n", msg);
+- (void)logInputMessage:(NSString *)msg {
+	NSLog(@"%@ Input:\n%@\n", self.branding, msg);
+}
+
+- (void)logOutputMessage:(NSString *)msg {
+	NSLog(@"%@ Output:\n%@\n", self.branding, msg);
 }
 
 #pragma mark -
@@ -138,7 +150,10 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 }
 
 - (void)onSocket:(AsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)port {
-	[self logInfo:FORMAT(@"Accepted client %@:%hu", host, port)];
+	if (!squelchClientLogging) {
+        [self logInfo:FORMAT(@"Accepted client %@:%hu", host, port)];
+    }
+    
 
     NSString *welcomeMsg = [NSString stringWithFormat: @"%@\r\n%@", self.welcomeMessage, self.prompt];
 	NSData *welcomeData = [welcomeMsg dataUsingEncoding:NSUTF8StringEncoding];
@@ -158,7 +173,7 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 	NSData *strData = [data subdataWithRange:NSMakeRange(0, [data length] - 2)];
 	NSString *msg = [[[NSString alloc] initWithData:strData encoding:NSUTF8StringEncoding] autorelease];
 	if(msg) {
-		[self logMessage:msg];
+		[self logInputMessage:msg];
 	}
 	else {
 		[self logError:@"Error converting received data into UTF-8 String"];
@@ -176,6 +191,8 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 		returnString = @"";
 	}
 	
+    [self logOutputMessage:returnString];
+    
 	returnString = [returnString stringByAppendingString:self.prompt];
 	
 	NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
@@ -206,7 +223,9 @@ static NSString * const DEFAULT_PROMPT = @"\n>";
 }
 
 - (void)onSocket:(AsyncSocket *)sock willDisconnectWithError:(NSError *)err {
-	[self logInfo:FORMAT(@"Client Disconnected: %@:%hu", [sock connectedHost], [sock connectedPort])];
+    if (!squelchClientLogging) {
+        [self logInfo:FORMAT(@"Client Disconnected: %@:%hu", [sock connectedHost], [sock connectedPort])];
+    }
 }
 
 - (void)onSocketDidDisconnect:(AsyncSocket *)sock {
