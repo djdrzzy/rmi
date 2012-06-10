@@ -31,7 +31,8 @@
 
 @protocol RemoteMessageInterfaceDelegate <NSObject>
 @required
-// What is returned is what is echo'd back to the user connected.
+// What is returned is what is echo'd back to the user connected. If nil
+// then nothing is echoed back
 -(NSString*) remoteMessageInterface:(RemoteMessageInterface*)interface
 											receivedMessage:(NSString*)message;
 @end

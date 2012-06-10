@@ -186,19 +186,16 @@ static NSString * const DEFAULT_BRANDING = @"RMI";
 		returnString = [self.delegate remoteMessageInterface:self receivedMessage:msg];
 	}
 	
-	
-	if (!returnString) {
-		returnString = @"";
-	}
-	
-    [self logOutputMessage:returnString];
-    
-	returnString = [returnString stringByAppendingString:self.prompt];
-	
-	NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
-	[sock writeData:dataToReturn withTimeout:-1 tag:ECHO_MSG];
-	
-	
+    if (returnString) {
+        [self logOutputMessage:returnString];
+        
+        returnString = [returnString stringByAppendingString:self.prompt];
+        
+        NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
+        [sock writeData:dataToReturn withTimeout:-1 tag:ECHO_MSG];
+    } else {
+        [self logOutputMessage:@"nil returned so no echo back,"];
+    }
 }
 
 /**
