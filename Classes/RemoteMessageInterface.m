@@ -170,32 +170,36 @@ static NSString * const DEFAULT_BRANDING = @"RMI";
 }
 
 - (void)onSocket:(AsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag {
-	NSData *strData = [data subdataWithRange:NSMakeRange(0, [data length] - 2)];
-	NSString *msg = [[[NSString alloc] initWithData:strData encoding:NSUTF8StringEncoding] autorelease];
-	if(msg) {
-		[self logInputMessage:msg];
-	}
-	else {
-		[self logError:@"Error converting received data into UTF-8 String"];
-	}
-	
-	// Even if we were unable to write the incoming data to the log,
-	// we're still going to echo it back to the client.
-	NSString *returnString = @"";
-	if ([self.delegate respondsToSelector:@selector(remoteMessageInterface:receivedMessage:)]) {
-		returnString = [self.delegate remoteMessageInterface:self receivedMessage:msg];
-	}
-	
-    if (returnString) {
-        [self logOutputMessage:returnString];
-        
-        returnString = [returnString stringByAppendingString:self.prompt];
-        
-        NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
-        [sock writeData:dataToReturn withTimeout:-1 tag:ECHO_MSG];
-    } else {
-        [self logOutputMessage:@"nil returned so no echo back,"];
+    NSData *strData = [data subdataWithRange:NSMakeRange(0, [data length] - 2)];
+    NSString *msg = [[[NSString alloc] initWithData:strData encoding:NSUTF8StringEncoding] autorelease];
+    if(msg) {
+	[self logInputMessage:msg];
     }
+    else {
+	[self logError:@"Error converting received data into UTF-8 String"];
+    }
+    
+    // Even if we were unable to write the incoming data to the log,
+    // we're still going to echo it back to the client.
+    NSString *returnString = @"";
+    if ([self.delegate respondsToSelector:@selector(remoteMessageInterface:receivedMessage:)]) {
+	returnString = [self.delegate remoteMessageInterface:self receivedMessage:msg];
+    }
+    
+    NSString *toAppend = self.prompt;
+    if (!returnString) {
+	returnString = @"";
+	toAppend = @"";
+    }
+    
+    [self logOutputMessage:returnString];
+    
+    returnString = [returnString stringByAppendingString:toAppend];
+    
+    NSData *dataToReturn = [returnString dataUsingEncoding:NSUTF8StringEncoding];
+    [sock writeData:dataToReturn withTimeout:-1 tag:ECHO_MSG];
+    
+    
 }
 
 /**
